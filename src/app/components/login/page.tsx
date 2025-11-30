@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import BASE_URL from '@/app/config/api/api';
 import Image from 'next/image';
+import { Eye, EyeOff } from 'lucide-react';
 
 // Dynamically import Lottie with SSR disabled
 const Lottie = dynamic(() => import('lottie-react'), { 
@@ -19,6 +20,12 @@ const Login = () => {
   const [animationData, setAnimationData] = useState(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+
+   function openOTP(){
+        router.push("/components/otp/");
+
+      }
 
   useEffect(() => {
     const fetchAnimation = async () => {
@@ -74,6 +81,8 @@ const Login = () => {
         return;
       }
 
+     
+
       const data = await response.json();
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', data.token);
@@ -91,9 +100,6 @@ const Login = () => {
     }
   };
 
-  const handlePrivacyPolicy = () => {
-    console.log('Privacy policy clicked');
-  };
 
   const handleResetPassword = () => {
     router.push("/components/reset-password");
@@ -166,20 +172,15 @@ const Login = () => {
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   onClick={() => setShowPassword(!showPassword)}
+                  onMouseDown={(e) => e.preventDefault()} /* prevent input blur on click */
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
                 >
                   {showPassword ? (
-                    /* eye off icon */
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.7 6.7m3.178 3.178a3 3 0 013.242-.242m4.242 4.242L19.3 17.3m-4.242-4.242a3 3 0 01-.242-3.242m0 0l-4.242-4.242M19.3 17.3L6.7 6.7" />
-                    </svg>
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    /* eye icon */
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>
@@ -218,10 +219,10 @@ const Login = () => {
           {/* Footer */}
           <footer className="mt-6 text-center">
             <button 
-              onClick={handlePrivacyPolicy}
+              onClick={openOTP}
               className="text-blue-600 hover:text-blue-800 text-sm transition-colors duration-200"
             >
-              Privacy Policy
+              Request OTP
             </button>
           </footer>
         </div>

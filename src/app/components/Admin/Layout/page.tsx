@@ -30,7 +30,7 @@ const Layout: React.FC = () => {
   
   function Logout() {
     setIsSidebarOpen(true);
-    router.push('/components/LoginPage');
+    router.push('/components/login');
   }
   
   const renderContent = () => {
