@@ -17,6 +17,35 @@ type Ticket = {
    replies: string[];  
 };
 
+type TicketConversationMessage = {
+  actorRole: string;
+  channel: string;
+  message: string;
+  timestamp: string;
+};
+
+type TicketContext = {
+  ticketId: number;
+  status: string;
+  issueDescription: string;
+  subject: string;
+  issuerEmail: string;
+  assignedAgent: string;
+  channelOfOrigin: string;
+  launchTimestamp: string;
+  updatedAt: string;
+  servedTimestamp: string;
+  openTicket: boolean;
+  minutesOpen: number;
+  conversationHistory: TicketConversationMessage[];
+};
+
+type TicketLookupResponse = {
+  found: boolean;
+  message: string;
+  tickets: TicketContext[];
+};
+
 type TicketStats = {
   all: number;
   new: number;
@@ -72,6 +101,8 @@ const Tickets: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [authToken, setAuthToken] = useState("")
   const [comment, setComment] = useState("");
+  const [ticketContext, setTicketContext] = useState<TicketContext | null>(null);
+  const [isContextLoading, setIsContextLoading] = useState<boolean>(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   
 
@@ -140,16 +171,51 @@ const Tickets: React.FC = () => {
     return matchesFilter && matchesSearch;
   });
 
+  const fetchTicketContext = async (ticketId: string) => {
+    setIsContextLoading(true);
+    try {
+      const response = await fetch(`${BASE_URL}/ticket/lookup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ticketId: Number(ticketId),
+          includeClosed: true,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: TicketLookupResponse = await response.json();
+      if (data.found && data.tickets && data.tickets.length > 0) {
+        setTicketContext(data.tickets[0]);
+      } else {
+        setTicketContext(null);
+      }
+    } catch (error) {
+      console.error("Error loading ticket context:", error);
+      setTicketContext(null);
+      showToast('error', 'Failed to load ticket conversation context.');
+    } finally {
+      setIsContextLoading(false);
+    }
+  };
+
   const openModal = (ticket: Ticket) => {
     setSelectedTicket(ticket);
     setIsModalOpen(true);
     setComment("");
+    fetchTicketContext(ticket.id);
   };
 
   const closeModal = () => {
     setSelectedTicket(null);
     setIsModalOpen(false);
     setComment("");
+    setTicketContext(null);
   };
 
   const updateTicketStatus = async (ticketId: string, newStatus: "NEW" | "OPEN" | "CLOSED") => {
@@ -522,8 +588,40 @@ const Tickets: React.FC = () => {
                       </p>
                     </div>
                     <div className="space-y-1">
-                      
-                     
+                      <div className="flex items-center space-x-2 text-slate-500 text-sm font-medium">
+                        <User className="w-4 h-4" />
+                        <span>Assigned Agent</span>
+                      </div>
+                      <p className="bg-white px-3 py-2 rounded-lg border font-medium">
+                        {ticketContext?.assignedAgent || "Unassigned"}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2 text-slate-500 text-sm font-medium">
+                        <MessageSquare className="w-4 h-4" />
+                        <span>Customer Email</span>
+                      </div>
+                      <p className="bg-white px-3 py-2 rounded-lg border font-medium break-all">
+                        {ticketContext?.issuerEmail || "Unknown"}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2 text-slate-500 text-sm font-medium">
+                        <Clock className="w-4 h-4" />
+                        <span>Open Duration</span>
+                      </div>
+                      <p className="bg-white px-3 py-2 rounded-lg border font-medium">
+                        {ticketContext ? `${ticketContext.minutesOpen} mins` : "N/A"}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2 text-slate-500 text-sm font-medium">
+                        <Tag className="w-4 h-4" />
+                        <span>Origin Channel</span>
+                      </div>
+                      <p className="bg-white px-3 py-2 rounded-lg border font-medium">
+                        {ticketContext?.channelOfOrigin || "Unknown"}
+                      </p>
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2 text-slate-500 text-sm font-medium">
@@ -556,6 +654,50 @@ const Tickets: React.FC = () => {
                         {selectedTicket.content}
                       </p>
                     </div>
+                  </div>
+
+                  {/* Full Conversation Timeline */}
+                  <div className="mb-6">
+                    <h3 className="flex items-center space-x-2 text-xl font-bold text-slate-800 mb-4">
+                      <Clock className="w-6 h-6 text-blue-600" />
+                      <span>Conversation Timeline</span>
+                    </h3>
+
+                    {isContextLoading ? (
+                      <div className="bg-slate-50 border-2 border-slate-200 p-6 rounded-2xl flex items-center space-x-3">
+                        <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                        <span className="text-slate-600">Loading full ticket conversation context...</span>
+                      </div>
+                    ) : ticketContext?.conversationHistory && ticketContext.conversationHistory.length > 0 ? (
+                      <div className="bg-slate-50 border-2 border-slate-200 p-4 rounded-2xl max-h-80 overflow-y-auto space-y-3">
+                        {[...ticketContext.conversationHistory]
+                          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                          .map((entry, index) => (
+                            <div key={`${entry.timestamp}-${index}`} className="bg-white border border-slate-200 rounded-xl p-4">
+                              <div className="flex flex-wrap items-center gap-2 mb-2 text-xs">
+                                <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold">
+                                  {entry.actorRole || "SYSTEM"}
+                                </span>
+                                <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
+                                  {entry.channel || "unknown"}
+                                </span>
+                                <span className="text-slate-500">
+                                  {entry.timestamp ? formatDate(entry.timestamp) : "Unknown time"}
+                                </span>
+                              </div>
+                              <p className="text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
+                                {entry.message}
+                              </p>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50 border-2 border-slate-200 p-6 rounded-2xl">
+                        <p className="text-slate-600">
+                          No prior bot/agent conversation history found for this ticket yet.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Replies Section */}

@@ -1,6 +1,7 @@
-'use client'
-import React, { useEffect, useState } from "react";
-import Image from "next/image";
+'use client';
+
+import React, { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import {
   BarChart,
   Bar,
@@ -9,19 +10,11 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Cell
-} from "recharts";
-import BASE_URL from "@/app/config/api/api";
+  Cell,
+} from 'recharts';
+import BASE_URL from '@/app/config/api/api';
 
-interface SystemAnalytics {
-  openTickets: number;
-  totalAgents: number;
-  dailyTickets: number;
-  weeklyTickets?: number; // New field you added
-  monthlyTickets?: number; // New field you added
-  performance: PerformanceDTO[];
-  tickets: Ticket[];
-}
+type TimePeriod = 'day' | 'week' | 'month';
 
 interface Ticket {
   name: string;
@@ -33,341 +26,357 @@ interface Ticket {
 
 interface PerformanceDTO {
   agentName: string;
-  photo: string; // Now available
+  agentEmail?: string;
+  photo?: string;
+  totalTickets?: number;
   openTickets: number;
+  closedTickets?: number;
+  newTickets?: number;
   oldTickets: number;
+  highPriorityTickets?: number;
+  urgentTickets?: number;
+  repliesCount?: number;
+  solvedPast24Hours?: number;
+  solvedPastWeek: number;
+  solvedPastMonth: number;
   frc: number;
-  solvedPastWeek: number; // Now available
-  solvedPastMonth: number; // Now available
-  oldestTickets?: Ticket[]; // Optional
+  avgResponseTimeMinutes?: number;
+  avgResolutionTimeMinutes?: number;
+  resolutionRate?: number;
+  slaBreachRate?: number;
+}
+
+interface SystemAnalytics {
+  totalTickets?: number;
+  openTickets: number;
+  closedTickets?: number;
+  newTickets?: number;
+  totalAgents: number;
+  dailyTickets: number;
+  weeklyTickets?: number;
+  monthlyTickets?: number;
+  resolvedToday?: number;
+  resolvedThisWeek?: number;
+  resolvedThisMonth?: number;
+  avgResponseTimeMinutes?: number;
+  avgResolutionTimeMinutes?: number;
+  closureRate?: number;
+  frcRate?: number;
+  slaBreachRate?: number;
+  performance: PerformanceDTO[];
+  tickets: Ticket[];
 }
 
 const COLORS = {
-  High: '#FF6B6B',
-  Low: '#4ECDC4',
-  Normal: '#FFD166',
-  Urgent: '#FF9F1C',
-  background: '#F8F9FA',
-  card: '#FFFFFF',
-  text: '#2B2D42',
-  accent: '#4361EE'
+  high: '#ef4444',
+  low: '#14b8a6',
+  normal: '#f59e0b',
+  urgent: '#7c3aed',
 };
+
+const formatMinutes = (value?: number): string => {
+  const minutes = Math.max(0, Math.round(value ?? 0));
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes === 0 ? `${hours}h` : `${hours}h ${remainingMinutes}m`;
+};
+
+const toPercent = (value?: number): string => `${Math.round(value ?? 0)}%`;
 
 const AgentPerformanceDashboard = () => {
   const [analyticsData, setAnalyticsData] = useState<SystemAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error] = useState<string | null>(null);
-  const [timePeriod, setTimePeriod] = useState<'week' | 'month' | 'quarter'>('week');
+  const [error, setError] = useState<string | null>(null);
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('week');
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
         const response = await fetch(`${BASE_URL}/admin/getAnalytics`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          
         });
-        
+
         if (!response.ok) {
-          throw new Error('Failed to fetch analytics');
+          throw new Error(`Failed to fetch analytics: ${response.status}`);
         }
-        
-        const data = await response.json();
+
+        const data: SystemAnalytics = await response.json();
         setAnalyticsData(data);
       } catch (err) {
-        console.log(err)
+        console.error(err);
+        setError(err instanceof Error ? err.message : 'Failed to load analytics');
       } finally {
         setLoading(false);
       }
     };
 
     fetchAnalytics();
-  }, [timePeriod]);
+  }, []);
 
-  if (loading) return (
-    <div className="p-6 flex justify-center items-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
-  );
-  
-  if (error) return (
-    <div className="p-6 text-center text-red-500 min-h-screen flex items-center justify-center">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Error Loading Data</h2>
-        <p>{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Retry
-        </button>
+  const sortedAgents = useMemo(() => {
+    if (!analyticsData) {
+      return [];
+    }
+
+    return [...analyticsData.performance].sort((a, b) => (b.totalTickets ?? 0) - (a.totalTickets ?? 0));
+  }, [analyticsData]);
+
+  if (loading) {
+    return (
+      <div className="p-6 flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
       </div>
-    </div>
-  );
-  
-  if (!analyticsData) return (
-    <div className="p-6 text-center min-h-screen flex items-center justify-center">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">No Data Available</h2>
-        <p>No analytics data could be loaded</p>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center text-red-600 min-h-screen flex items-center justify-center">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Analytics Unavailable</h2>
+          <p>{error}</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  // Calculate metrics
-  const avgFcr = analyticsData.performance.length > 0 
-    ? Math.round(analyticsData.performance.reduce((acc, agent) => acc + agent.frc, 0) / analyticsData.performance.length)
-    : 0;
+  if (!analyticsData) {
+    return (
+      <div className="p-6 text-center min-h-screen flex items-center justify-center">
+        <p>No analytics data available.</p>
+      </div>
+    );
+  }
 
-  const totalWeeklyTickets = analyticsData.weeklyTickets || 
-    analyticsData.performance.reduce((acc, agent) => acc + agent.solvedPastWeek, 0);
+  const periodTickets =
+    timePeriod === 'day'
+      ? analyticsData.dailyTickets ?? 0
+      : timePeriod === 'week'
+        ? analyticsData.weeklyTickets ?? 0
+        : analyticsData.monthlyTickets ?? 0;
+
+  const periodResolved =
+    timePeriod === 'day'
+      ? analyticsData.resolvedToday ?? 0
+      : timePeriod === 'week'
+        ? analyticsData.resolvedThisWeek ?? 0
+        : analyticsData.resolvedThisMonth ?? 0;
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Agent Performance</h1>
-          <p className="text-gray-500">Updated: {new Date().toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}</p>
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Agent Performance</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Updated {new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+          </p>
         </div>
-        
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Total Agents</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+            <p className="text-sm text-gray-500">Total Agents</p>
             <p className="text-3xl font-bold text-gray-900">{analyticsData.totalAgents}</p>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Avg. FCR Rate</h3>
-            <p className="text-3xl font-bold text-gray-900">{avgFcr}%</p>
+          <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+            <p className="text-sm text-gray-500">Total Tickets</p>
+            <p className="text-3xl font-bold text-gray-900">{analyticsData.totalTickets ?? 0}</p>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">{timePeriod === 'week' ? 'Weekly' : timePeriod === 'month' ? 'Monthly' : 'Quarterly'} Tickets</h3>
-            <p className="text-3xl font-bold text-gray-900">
-              {timePeriod === 'week' ? totalWeeklyTickets : 
-               timePeriod === 'month' ? analyticsData.monthlyTickets : 
-               'N/A'}
-            </p>
+          <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+            <p className="text-sm text-gray-500">Avg Response Time</p>
+            <p className="text-3xl font-bold text-gray-900">{formatMinutes(analyticsData.avgResponseTimeMinutes)}</p>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Open Tickets</h3>
-            <p className="text-3xl font-bold text-gray-900">{analyticsData.openTickets}</p>
+          <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+            <p className="text-sm text-gray-500">Avg Resolution Time</p>
+            <p className="text-3xl font-bold text-gray-900">{formatMinutes(analyticsData.avgResolutionTimeMinutes)}</p>
           </div>
         </div>
-        
-        {/* Chart Section */}
-        <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Ticket Priority Distribution</h2>
-            <div className="flex space-x-2">
-              <button 
-                onClick={() => setTimePeriod('week')}
-                className={`px-3 py-1 text-sm rounded-md ${
-                  timePeriod === 'week' 
-                    ? 'bg-blue-50 text-blue-600' 
-                    : 'text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                Week
-              </button>
-              <button 
-                onClick={() => setTimePeriod('month')}
-                className={`px-3 py-1 text-sm rounded-md ${
-                  timePeriod === 'month' 
-                    ? 'bg-blue-50 text-blue-600' 
-                    : 'text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                Month
-              </button>
-              <button 
-                onClick={() => setTimePeriod('quarter')}
-                className={`px-3 py-1 text-sm rounded-md ${
-                  timePeriod === 'quarter' 
-                    ? 'bg-blue-50 text-blue-600' 
-                    : 'text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                Quarter
-              </button>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+            <p className="text-sm text-gray-500">Open / Closed</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {analyticsData.openTickets} / {analyticsData.closedTickets ?? 0}
+            </p>
+          </div>
+          <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+            <p className="text-sm text-gray-500">Closure Rate</p>
+            <p className="text-2xl font-bold text-gray-900">{toPercent(analyticsData.closureRate)}</p>
+          </div>
+          <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+            <p className="text-sm text-gray-500">FCR Rate</p>
+            <p className="text-2xl font-bold text-gray-900">{toPercent(analyticsData.frcRate)}</p>
+          </div>
+          <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+            <p className="text-sm text-gray-500">SLA Breach Rate</p>
+            <p className="text-2xl font-bold text-gray-900">{toPercent(analyticsData.slaBreachRate)}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+          <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Workload Window</h2>
+            <div className="flex items-center gap-2">
+              {(['day', 'week', 'month'] as TimePeriod[]).map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setTimePeriod(period)}
+                  className={`px-3 py-1.5 text-sm rounded-md ${
+                    timePeriod === period ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {period[0].toUpperCase() + period.slice(1)}
+                </button>
+              ))}
             </div>
           </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+              <p className="text-sm text-gray-500">Tickets Created ({timePeriod})</p>
+              <p className="text-3xl font-bold text-gray-900">{periodTickets}</p>
+            </div>
+            <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+              <p className="text-sm text-gray-500">Tickets Resolved ({timePeriod})</p>
+              <p className="text-3xl font-bold text-gray-900">{periodResolved}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Priority Distribution by Agent</h2>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={analyticsData.tickets}>
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#6B7280' }}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#6B7280' }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '0.5rem',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                  }}
-                />
-                <Legend 
-                  wrapperStyle={{ paddingTop: '20px' }}
-                />
-                <Bar dataKey="high" name="High" fill={COLORS.High} radius={[4, 4, 0, 0]}>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="high" name="High" fill={COLORS.high} radius={[4, 4, 0, 0]}>
                   {analyticsData.tickets.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS.High} />
+                    <Cell key={`high-${entry.name}-${index}`} fill={COLORS.high} />
                   ))}
                 </Bar>
-                <Bar dataKey="low" name="Low" fill={COLORS.Low} radius={[4, 4, 0, 0]}>
+                <Bar dataKey="normal" name="Normal" fill={COLORS.normal} radius={[4, 4, 0, 0]}>
                   {analyticsData.tickets.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS.Low} />
+                    <Cell key={`normal-${entry.name}-${index}`} fill={COLORS.normal} />
                   ))}
                 </Bar>
-                <Bar dataKey="normal" name="Normal" fill={COLORS.Normal} radius={[4, 4, 0, 0]}>
+                <Bar dataKey="low" name="Low" fill={COLORS.low} radius={[4, 4, 0, 0]}>
                   {analyticsData.tickets.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS.Normal} />
+                    <Cell key={`low-${entry.name}-${index}`} fill={COLORS.low} />
                   ))}
                 </Bar>
-                <Bar dataKey="urgent" name="Urgent" fill={COLORS.Urgent} radius={[4, 4, 0, 0]}>
+                <Bar dataKey="urgent" name="Urgent" fill={COLORS.urgent} radius={[4, 4, 0, 0]}>
                   {analyticsData.tickets.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS.Urgent} />
+                    <Cell key={`urgent-${entry.name}-${index}`} fill={COLORS.urgent} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-        
-        {/* FCR Rate Section */}
-        <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">First Contact Resolution (FCR) Rates</h2>
+
+        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Agent Metrics</h2>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="pb-3 text-left text-sm font-medium text-gray-500">Agent</th>
-                  <th className="pb-3 text-left text-sm font-medium text-gray-500">Photo</th>
-                  <th className="pb-3 text-right text-sm font-medium text-gray-500">FCR Rate</th>
-                  <th className="pb-3 text-right text-sm font-medium text-gray-500">Open Tickets</th>
-                  <th className="pb-3 text-right text-sm font-medium text-gray-500">Progress</th>
+                <tr className="border-b border-gray-200 text-gray-500">
+                  <th className="text-left py-3">Agent</th>
+                  <th className="text-right py-3">Total</th>
+                  <th className="text-right py-3">Open</th>
+                  <th className="text-right py-3">Closed</th>
+                  <th className="text-right py-3">Avg Response</th>
+                  <th className="text-right py-3">Avg Resolution</th>
+                  <th className="text-right py-3">Resolution</th>
+                  <th className="text-right py-3">FCR</th>
+                  <th className="text-right py-3">SLA Breach</th>
                 </tr>
               </thead>
               <tbody>
-                {analyticsData.performance.map((agent) => (
-                  <tr key={agent.agentName} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                    <td className="py-4 text-sm font-medium text-gray-900">{agent.agentName}</td>
-                    <td className="py-4">
-                      <div className="flex items-center">
+                {sortedAgents.map((agent) => (
+                  <tr key={agent.agentEmail ?? agent.agentName} className="border-b border-gray-100 last:border-0">
+                    <td className="py-3">
+                      <div className="flex items-center gap-3">
                         <Image
-                          width={32}
-                          height={32}
-                          src={agent.photo}
+                          width={30}
+                          height={30}
+                          src={agent.photo || '/Images/pro pic.jpg'}
                           alt={agent.agentName}
-                          className="w-8 h-8 rounded-full"
+                          className="rounded-full"
                         />
-                      </div>
-                    </td>
-                    <td className="py-4 text-right text-sm font-mono font-medium text-gray-900">{agent.frc}%</td>
-                    <td className="py-4 text-right text-sm font-mono font-medium text-gray-900">{agent.openTickets}</td>
-                    <td className="py-4 text-right">
-                      <div className="flex justify-end">
-                        <div className="w-full max-w-xs h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full rounded-full" 
-                            style={{
-                              width: `${agent.frc}%`,
-                              backgroundColor: agent.frc > 75 ? COLORS.High : agent.frc > 50 ? COLORS.Normal : COLORS.Urgent
-                            }}
-                          />
+                        <div>
+                          <p className="font-medium text-gray-900">{agent.agentName}</p>
+                          <p className="text-xs text-gray-500">{agent.agentEmail}</p>
                         </div>
                       </div>
                     </td>
+                    <td className="text-right py-3 font-medium text-gray-900">{agent.totalTickets ?? 0}</td>
+                    <td className="text-right py-3">{agent.openTickets}</td>
+                    <td className="text-right py-3">{agent.closedTickets ?? 0}</td>
+                    <td className="text-right py-3">{formatMinutes(agent.avgResponseTimeMinutes)}</td>
+                    <td className="text-right py-3">{formatMinutes(agent.avgResolutionTimeMinutes)}</td>
+                    <td className="text-right py-3">{toPercent(agent.resolutionRate)}</td>
+                    <td className="text-right py-3">{toPercent(agent.frc)}</td>
+                    <td className="text-right py-3">{toPercent(agent.slaBreachRate)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-        
-        {/* Agent Cards */}
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Agent Details</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {analyticsData.performance.map((agent) => (
-            <div key={agent.agentName} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center mb-6">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {sortedAgents.map((agent) => (
+            <div key={`${agent.agentEmail ?? agent.agentName}-card`} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
                 <Image
-                  width={48}
-                  height={48}
-                  src={agent.photo}
+                  width={44}
+                  height={44}
+                  src={agent.photo || '/Images/pro pic.jpg'}
                   alt={agent.agentName}
-                  className="w-12 h-12 rounded-full mr-4"
+                  className="rounded-full"
                 />
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{agent.agentName}</h3>
-                  <p className="text-sm text-gray-500">{agent.openTickets} open tickets • {agent.oldTickets} old tickets</p>
+                  <h3 className="text-base font-semibold text-gray-900">{agent.agentName}</h3>
+                  <p className="text-xs text-gray-500">{agent.agentEmail}</p>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="text-center">
-                  <p className="text-sm text-gray-500">Weekly Solved</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {agent.solvedPastWeek}
-                  </p>
+
+              <div className="grid grid-cols-3 gap-2 text-center mb-4">
+                <div className="bg-gray-50 rounded-md py-2">
+                  <p className="text-xs text-gray-500">Open</p>
+                  <p className="font-bold text-gray-900">{agent.openTickets}</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-sm text-gray-500">Monthly Solved</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {agent.solvedPastMonth}
-                  </p>
+                <div className="bg-gray-50 rounded-md py-2">
+                  <p className="text-xs text-gray-500">Old Open</p>
+                  <p className="font-bold text-gray-900">{agent.oldTickets}</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-sm text-gray-500">FCR Rate</p>
-                  <p className="text-xl font-bold" style={{
-                    color: agent.frc > 75 ? COLORS.High : agent.frc > 50 ? COLORS.Normal : COLORS.Urgent
-                  }}>{agent.frc}%</p>
+                <div className="bg-gray-50 rounded-md py-2">
+                  <p className="text-xs text-gray-500">High Priority</p>
+                  <p className="font-bold text-gray-900">{agent.highPriorityTickets ?? 0}</p>
                 </div>
               </div>
-              
-              {agent.oldestTickets && agent.oldestTickets.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-gray-500 mb-2">Oldest Tickets</h4>
-                  <ul className="space-y-1">
-                    {agent.oldestTickets.slice(0, 3).map((ticket, index) => (
-                      <li key={index} className="text-sm text-gray-700 flex justify-between">
-                        <span>{ticket.name}</span>
-                        <span className="font-medium" style={{
-                          color: ticket.urgent > 0 ? COLORS.Urgent :
-                                 ticket.high > 0 ? COLORS.High :
-                                 ticket.normal > 0 ? COLORS.Normal : COLORS.Low
-                        }}>
-                          {ticket.urgent > 0 ? 'urgent' :
-                           ticket.high > 0 ? 'high' :
-                           ticket.normal > 0 ? 'normal' : 'low'}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+
+              <div className="space-y-1 text-xs text-gray-600">
+                <p>Solved 24h: {agent.solvedPast24Hours ?? 0}</p>
+                <p>Solved Week: {agent.solvedPastWeek}</p>
+                <p>Solved Month: {agent.solvedPastMonth}</p>
+                <p>Avg Response: {formatMinutes(agent.avgResponseTimeMinutes)}</p>
+                <p>Avg Resolution: {formatMinutes(agent.avgResolutionTimeMinutes)}</p>
+              </div>
             </div>
           ))}
-        </div>
-        
-        <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
-          © {new Date().getFullYear()} Agent Performance Dashboard
         </div>
       </div>
     </div>

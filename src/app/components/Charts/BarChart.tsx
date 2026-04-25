@@ -13,6 +13,7 @@ import {
   ChartOptions,
   ChartData
 } from 'chart.js'
+import BASE_URL from '@/app/config/api/api'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
@@ -37,7 +38,7 @@ const BarChart: React.FC = () => {
           throw new Error('No token found')
         }
 
-        const response = await fetch('http://localhost:8080/ticket/getMyStats', {
+        const response = await fetch(`${BASE_URL}/ticket/getMyStats`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

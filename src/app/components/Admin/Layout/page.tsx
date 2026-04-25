@@ -9,6 +9,7 @@ import AgentPerformanceDashboard from '../Views/AgentPerformance';
 import UpdateProfile from '../../Agent/Views/UpdateProfile';
 import Settings from '../../Agent/Views/Settings';
 import UserCreation from '../Views/UserCreation';
+import AuditLogs from '../Views/AuditLogs';
 
 const Layout: React.FC = () => { 
   const [currentView, setCurrentView] = useState('Dashboard');
@@ -52,6 +53,8 @@ const Layout: React.FC = () => {
 
       case 'CREATE':
         return <UserCreation/>
+      case 'Audit Logs':
+        return <AuditLogs />;
       default:
         return <TicketList />;
     }
