@@ -9,7 +9,7 @@ interface TicketStats {
   closed: number;
 }
 
-type FilterType = "all" | "new" | "open" | "closed";
+type FilterType = "all" | "open" | "closed";
 
 interface TicketFilterProps {
   ticketStats: TicketStats;
@@ -24,49 +24,41 @@ const TicketFilter: React.FC<TicketFilterProps> = ({
 }) => {
   const getButtonClass = (filter: FilterType) => {
     const hasTickets = ticketStats[filter] > 0;
-    return `rounded-full border px-3 py-2 text-center cursor-pointer transition-colors ${
+    return `rounded-lg border px-4 py-2.5 text-center transition-colors text-sm font-medium ${
       selectedFilter === filter
-        ? "bg-amber-700 text-white"
+        ? "bg-[#3F5C79] border-[#3F5C79] text-white shadow-sm"
         : hasTickets 
-          ? "border-amber-700 text-gray-800 hover:bg-amber-100" 
-          : "border-gray-300 text-gray-500"
+          ? "border-slate-300 bg-white text-slate-700 hover:bg-slate-50" 
+          : "border-slate-200 bg-slate-50 text-slate-400"
     }`;
   };
 
   return (
-    <div className="flex flex-wrap gap-2 sm:gap-4 p-3 bg-gray-100 rounded-lg shadow-md text-black mb-2.5 w-full max-w-3xl justify-center">
-      <div
-        role="button"
+    <div className="flex flex-wrap gap-2 sm:gap-3 p-2 bg-[#F4F7FA] rounded-xl border border-slate-200 text-black w-full max-w-3xl">
+      <button
+        type="button"
         aria-pressed={selectedFilter === "all"}
         className={getButtonClass("all")}
         onClick={() => onFilterChange("all")}
       >
         All Tickets ({ticketStats.all})
-      </div>
-      <div
-        role="button"
-        aria-pressed={selectedFilter === "new"}
-        className={getButtonClass("new")}
-        onClick={() => onFilterChange("new")}
-      >
-        New ({ticketStats.new})
-      </div>
-      <div
-        role="button"
+      </button>
+      <button
+        type="button"
         aria-pressed={selectedFilter === "open"}
         className={getButtonClass("open")}
         onClick={() => onFilterChange("open")}
       >
         Open ({ticketStats.open})
-      </div>
-      <div
-        role="button"
+      </button>
+      <button
+        type="button"
         aria-pressed={selectedFilter === "closed"}
         className={getButtonClass("closed")}
         onClick={() => onFilterChange("closed")}
       >
         Closed ({ticketStats.closed})
-      </div>
+      </button>
     </div>
   );
 };

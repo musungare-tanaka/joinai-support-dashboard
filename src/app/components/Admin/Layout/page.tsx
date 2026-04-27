@@ -19,6 +19,7 @@ const Layout: React.FC = () => {
   const router = useRouter();
   
   const toggleModal = () => setIsModalOpen(!isModalOpen);
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleNotifications = () => {
     if (!isNotificationTabOpen) {
       setIsSidebarOpen(false); // Collapse sidebar when opening notifications
@@ -44,6 +45,7 @@ const Layout: React.FC = () => {
         return < AgentDataComponent/>; 
       
       case 'Agent Peformance':
+      case 'Agent Performance':
         return <AgentPerformanceDashboard/>;
 
       case 'Settings':
@@ -52,6 +54,7 @@ const Layout: React.FC = () => {
         return <UpdateProfile />; 
 
       case 'CREATE':
+      case 'User Provisioning':
         return <UserCreation/>
       case 'Audit Logs':
         return <AuditLogs />;
@@ -66,18 +69,21 @@ const Layout: React.FC = () => {
         <NavBar 
           onModalChange={toggleModal} 
           showNotifications={toggleNotifications} 
+          onToggleSidebar={toggleSidebar}
+          currentView={currentView}
         />
       </div>
       
       <div className="flex flex-1 overflow-hidden">
-        <div className={`flex-none ${isSidebarOpen ? 'w-64' : 'w-16'} transition-width duration-300 ease-in-out`}>
+        <div className={`flex-none ${isSidebarOpen ? 'w-72' : 'w-20'} transition-all duration-300 ease-in-out`}>
           <SideNav
             isSidebarOpen={isSidebarOpen}
             onSelectPage={(view) => setCurrentView(view)}
+            currentView={currentView}
           />
         </div>
         
-        <div className="flex-1 bg-gray-100 p-6 overflow-auto mt-12 text-black">
+        <div className="flex-1 bg-[#EEF2F6] p-6 overflow-auto mt-16 text-black">
           {renderContent()}
         </div>
       </div>
@@ -85,16 +91,16 @@ const Layout: React.FC = () => {
       {/* Modal */}
       {isModalOpen && (
   <div
-    className="fixed top-20 right-6 z-50 w-80 bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200"
+    className="fixed top-[4.6rem] right-6 z-50 w-80 bg-white shadow-xl rounded-xl overflow-hidden border border-slate-200"
     aria-hidden={!isModalOpen}
   >
     <div 
       onClick={Logout} 
-      className="text-gray-800 hover:bg-gray-100 py-3 px-4 w-full text-left cursor-pointer transition-colors duration-200 flex items-center font-medium"
+      className="text-slate-800 hover:bg-[#EEF2F6] py-3 px-4 w-full text-left cursor-pointer transition-colors duration-200 flex items-center font-medium"
     >
       <svg 
         xmlns="http://www.w3.org/2000/svg" 
-        className="h-5 w-5 mr-3 text-gray-600" 
+        className="h-5 w-5 mr-3 text-slate-600" 
         fill="none" 
         viewBox="0 0 24 24" 
         stroke="currentColor"
@@ -114,7 +120,7 @@ const Layout: React.FC = () => {
       {/* Notifications Tab */}
       {isNotificationTabOpen && (
         <div
-          className="fixed top-20 right-6 z-50 w-80 bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200"
+          className="fixed top-[4.6rem] right-6 z-50 w-80 bg-white shadow-xl rounded-xl overflow-hidden border border-slate-200"
           aria-hidden={!isNotificationTabOpen}
         >
           {/* Notifications Content */}

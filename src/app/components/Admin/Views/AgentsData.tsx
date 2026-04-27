@@ -1,7 +1,7 @@
 'use client'
 import BASE_URL from "@/app/config/api/api";
 import React, { useEffect, useState } from "react";
-import { FiEdit2, FiTrash2, FiUser, FiMail, FiPhone, FiCalendar, FiRefreshCw } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiUser, FiMail, FiPhone, FiCalendar, FiRefreshCw, FiLoader } from "react-icons/fi";
 import { FaUserShield } from "react-icons/fa";
 import { motion } from "framer-motion";
 
@@ -19,7 +19,7 @@ interface AgentData {
   state: string | null;
   zip: string | null;
   country: string | null;
-  enabled: boolean;
+  enabled?: boolean | null;
 }
 
 const AgentDataComponent: React.FC = () => {
@@ -30,6 +30,9 @@ const AgentDataComponent: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusUpdatingEmail, setStatusUpdatingEmail] = useState<string | null>(null);
+
+  const isAgentActive = (agent: AgentData): boolean => agent.enabled !== false;
 
   const fetchAgents = async () => {
     try {
@@ -116,6 +119,47 @@ const AgentDataComponent: React.FC = () => {
     } catch (err) {
       console.error(err);
       setError("Failed to delete agent");
+    }
+  };
+
+  const handleToggleStatus = async (agent: AgentData) => {
+    const token = localStorage.getItem("email");
+    if (!token) {
+      setError("Admin email is missing. Please log in again.");
+      return;
+    }
+
+    const nextEnabled = !isAgentActive(agent);
+    setStatusUpdatingEmail(agent.email);
+
+    try {
+      const response = await fetch(`${BASE_URL}/admin/updateAgentStatus`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token,
+          agentEmail: agent.email,
+          enabled: nextEnabled,
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error("You are not authorized to update account status.");
+        }
+        throw new Error("Failed to update account status.");
+      }
+
+      const updatedAgent: AgentData = await response.json();
+      setAgents((prev) => prev.map((a) => (a.email === updatedAgent.email ? updatedAgent : a)));
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to update account status.");
+    } finally {
+      setStatusUpdatingEmail(null);
     }
   };
 
@@ -273,9 +317,31 @@ const AgentDataComponent: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${agent.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {agent.enabled ? 'Active' : 'Inactive'}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isAgentActive(agent) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {isAgentActive(agent) ? 'Active' : 'Inactive'}
+                        </span>
+                        <button
+                          onClick={() => handleToggleStatus(agent)}
+                          disabled={statusUpdatingEmail === agent.email}
+                          className={`px-3 py-1 text-xs font-medium rounded-md border transition-colors ${
+                            isAgentActive(agent)
+                              ? 'border-red-200 text-red-700 bg-red-50 hover:bg-red-100'
+                              : 'border-green-200 text-green-700 bg-green-50 hover:bg-green-100'
+                          } ${statusUpdatingEmail === agent.email ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
+                          {statusUpdatingEmail === agent.email ? (
+                            <span className="inline-flex items-center gap-1">
+                              <FiLoader className="animate-spin" />
+                              Updating...
+                            </span>
+                          ) : isAgentActive(agent) ? (
+                            'Set Inactive'
+                          ) : (
+                            'Set Active'
+                          )}
+                        </button>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">

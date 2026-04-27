@@ -73,6 +73,8 @@ const Login = () => {
         let errorMessage = 'Login failed. Please try again.';
         if (response.status === 401) {
           errorMessage = 'Invalid credentials. Please check your email and password.';
+        } else if (response.status === 403) {
+          errorMessage = 'Your account is inactive. Please contact an administrator.';
         } else if (response.status >= 500) {
           errorMessage = 'Server error. Please try again later.';
         }

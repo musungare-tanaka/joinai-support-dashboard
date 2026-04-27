@@ -53,7 +53,7 @@ type TicketStats = {
   closed: number;
 };
 
-type FilterType = "all" | "new" | "open" | "closed";
+type FilterType = "all" | "open" | "closed";
 
 interface ToastProps {
   type: 'success' | 'error' | 'info';
@@ -128,7 +128,6 @@ const Tickets: React.FC = () => {
       const data: Ticket[] = await response.json();
       setTickets(data);
       calculateTicketStats(data);
-      showToast('success', `Loaded ${data.length} tickets successfully`);
     } catch (error) {
       console.error("Error fetching tickets:", error);
       showToast('error', 'Failed to load tickets. Please try again.');
@@ -331,9 +330,9 @@ const Tickets: React.FC = () => {
         };
       case "NEW":
         return {
-          bg: "bg-purple-100",
-          text: "text-purple-800",
-          border: "border-purple-200",
+          bg: "bg-amber-100",
+          text: "text-amber-800",
+          border: "border-amber-200",
           icon: XCircle
         };
       default:
@@ -346,8 +345,11 @@ const Tickets: React.FC = () => {
     }
   };
 
+  const buttonBaseClass =
+    "flex items-center justify-center space-x-2 rounded-xl px-4 py-2.5 font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-[#EEF2F6]">
       {toast && (
         <Toast
           type={toast.type}
@@ -359,24 +361,24 @@ const Tickets: React.FC = () => {
       <div className="p-6 max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="mb-8">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-slate-800 mb-3">
-              Support Ticket Dashboard
+          <div className="mb-6">
+            <h1 className="text-3xl font-semibold text-slate-800 mb-2">
+              Ticket Workspace
             </h1>
-            <p className="text-lg text-slate-600">
-              Manage and track customer support tickets efficiently
+            <p className="text-slate-600">
+              Review customer issues, resolve open cases, and keep communication history in one place.
             </p>
           </div>
 
           {/* Search and Filters */}
-          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 mb-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-5">
             <div className="flex flex-col lg:flex-row gap-4 items-center">
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
                 <input
                   type="text"
                   placeholder="Search tickets by subject, content, or category..."
-                  className="w-full pl-12 pr-4 py-3.5 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 text-slate-700 placeholder-slate-400"
+                  className="w-full pl-12 pr-4 py-3.5 border border-slate-300 rounded-xl focus:border-[#3F5C79] focus:ring-2 focus:ring-[#3F5C79]/15 transition-all duration-200 text-slate-700 placeholder-slate-400"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -393,6 +395,25 @@ const Tickets: React.FC = () => {
                 onFilterChange={setFilter}
                 selectedFilter={filter}
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.12em] text-slate-500">All Tickets</p>
+              <p className="text-2xl font-semibold text-slate-800 mt-1">{ticketStats.all}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Open</p>
+              <p className="text-2xl font-semibold text-[#2D5B8C] mt-1">{ticketStats.open}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Closed</p>
+              <p className="text-2xl font-semibold text-[#356859] mt-1">{ticketStats.closed}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.12em] text-slate-500">New (Untriaged)</p>
+              <p className="text-2xl font-semibold text-[#8A6A35] mt-1">{ticketStats.new}</p>
             </div>
           </div>
         </div>
@@ -420,7 +441,7 @@ const Tickets: React.FC = () => {
           </div>
         ) : (
           /* Tickets List */
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredData.map((ticket) => {
               const statusConfig = getStatusConfig(ticket.status);
               const priorityConfig = getPriorityConfig(ticket.priority);
@@ -429,12 +450,11 @@ const Tickets: React.FC = () => {
               return (
                 <div
                   key={ticket.id}
-                  className="bg-white border-2 border-slate-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-blue-300"
+                  className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 hover:border-slate-300 h-full"
                 >
-                  <div className="p-6">
-                    <div className="flex items-start justify-between">
+                  <div className="p-6 h-full flex flex-col">
                       {/* Main Content */}
-                      <div className="flex-1 min-w-0 pr-4">
+                      <div className="flex-1 min-w-0">
                         {/* Status and Priority Badges */}
                         <div className="flex items-center gap-3 mb-4">
                           <span className={`inline-flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-semibold border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
@@ -453,7 +473,7 @@ const Tickets: React.FC = () => {
                         </h2>
                         
                         {/* Metadata Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div className="flex items-center space-x-2 text-slate-600">
                             <Tag className="w-4 h-4 text-slate-400" />
                             <span className="font-medium">Category:</span>
@@ -478,9 +498,9 @@ const Tickets: React.FC = () => {
                       </div>
                       
                       {/* Action Buttons */}
-                      <div className="flex flex-col gap-2 ml-4">
+                      <div className="mt-5 pt-4 border-t border-slate-200 flex flex-wrap gap-2">
                         <button
-                          className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105"
+                          className={`${buttonBaseClass} border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 w-full sm:w-auto`}
                           onClick={() => openModal(ticket)}
                           disabled={isUpdating}
                         >
@@ -489,7 +509,7 @@ const Tickets: React.FC = () => {
                         </button>
                         {(ticket.status === "NEW" || ticket.status === "OPEN") && (
                           <button
-                            className="flex items-center space-x-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className={`${buttonBaseClass} bg-[#3C6E5D] text-white shadow-sm hover:bg-[#335E50] w-full sm:w-auto`}
                             onClick={() => resolveTicket(ticket.id)}
                             disabled={isUpdating}
                           >
@@ -503,7 +523,7 @@ const Tickets: React.FC = () => {
                         )}
                         {ticket.status === "CLOSED" && (
                           <button
-                            className="flex items-center space-x-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className={`${buttonBaseClass} bg-[#7C6334] text-white shadow-sm hover:bg-[#675229] w-full sm:w-auto`}
                             onClick={() => reopenTicket(ticket.id)}
                             disabled={isUpdating}
                           >
@@ -516,7 +536,6 @@ const Tickets: React.FC = () => {
                           </button>
                         )}
                       </div>
-                    </div>
                   </div>
                 </div>
               );
@@ -526,10 +545,10 @@ const Tickets: React.FC = () => {
 
         {/* Enhanced Modal */}
         {isModalOpen && selectedTicket && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-slate-200">
+          <div className="fixed inset-0 bg-black/45 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-slate-200">
               {/* Modal Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
+              <div className="bg-[#2F4358] p-6 text-white">
                 <div className="flex justify-between items-start">
                   <div className="flex-1 min-w-0 pr-4">
                     <h2 className="text-2xl font-bold mb-3 leading-tight">
@@ -556,7 +575,7 @@ const Tickets: React.FC = () => {
                   </div>
                   <button
                     onClick={closeModal}
-                    className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+                    className="p-2 hover:bg-white/15 rounded-xl transition-colors"
                     disabled={isUpdating}
                   >
                     <X className="w-6 h-6" />
@@ -602,7 +621,7 @@ const Tickets: React.FC = () => {
                         <span>Customer Email</span>
                       </div>
                       <p className="bg-white px-3 py-2 rounded-lg border font-medium break-all">
-                        {ticketContext?.issuerEmail || "Unknown"}
+                        {ticketContext?.issuerEmail?.trim() ? ticketContext.issuerEmail : "N/A"}
                       </p>
                     </div>
                     <div className="space-y-1">
@@ -646,10 +665,10 @@ const Tickets: React.FC = () => {
                   {/* Ticket Description */}
                   <div className="mb-6">
                     <h3 className="flex items-center space-x-2 text-xl font-bold text-slate-800 mb-4">
-                      <MessageSquare className="w-6 h-6 text-blue-600" />
+                      <MessageSquare className="w-6 h-6 text-[#3F5C79]" />
                       <span>Description</span>
                     </h3>
-                    <div className="bg-slate-50 border-2 border-slate-200 p-6 rounded-2xl min-h-[120px]">
+                    <div className="bg-slate-50 border border-slate-200 p-6 rounded-2xl min-h-[120px]">
                       <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">
                         {selectedTicket.content}
                       </p>
@@ -659,23 +678,23 @@ const Tickets: React.FC = () => {
                   {/* Full Conversation Timeline */}
                   <div className="mb-6">
                     <h3 className="flex items-center space-x-2 text-xl font-bold text-slate-800 mb-4">
-                      <Clock className="w-6 h-6 text-blue-600" />
+                      <Clock className="w-6 h-6 text-[#3F5C79]" />
                       <span>Conversation Timeline</span>
                     </h3>
 
                     {isContextLoading ? (
-                      <div className="bg-slate-50 border-2 border-slate-200 p-6 rounded-2xl flex items-center space-x-3">
-                        <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                      <div className="bg-slate-50 border border-slate-200 p-6 rounded-2xl flex items-center space-x-3">
+                        <Loader2 className="w-5 h-5 animate-spin text-[#3F5C79]" />
                         <span className="text-slate-600">Loading full ticket conversation context...</span>
                       </div>
                     ) : ticketContext?.conversationHistory && ticketContext.conversationHistory.length > 0 ? (
-                      <div className="bg-slate-50 border-2 border-slate-200 p-4 rounded-2xl max-h-80 overflow-y-auto space-y-3">
+                      <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl max-h-80 overflow-y-auto space-y-3">
                         {[...ticketContext.conversationHistory]
                           .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                           .map((entry, index) => (
                             <div key={`${entry.timestamp}-${index}`} className="bg-white border border-slate-200 rounded-xl p-4">
                               <div className="flex flex-wrap items-center gap-2 mb-2 text-xs">
-                                <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold">
+                                <span className="px-2 py-1 rounded-full bg-[#E3EDF7] text-[#315272] font-semibold">
                                   {entry.actorRole || "SYSTEM"}
                                 </span>
                                 <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
@@ -692,7 +711,7 @@ const Tickets: React.FC = () => {
                           ))}
                       </div>
                     ) : (
-                      <div className="bg-slate-50 border-2 border-slate-200 p-6 rounded-2xl">
+                      <div className="bg-slate-50 border border-slate-200 p-6 rounded-2xl">
                         <p className="text-slate-600">
                           No prior bot/agent conversation history found for this ticket yet.
                         </p>
@@ -704,19 +723,19 @@ const Tickets: React.FC = () => {
                   {selectedTicket.replies && selectedTicket.replies.length > 0 && (
                     <div className="mb-6">
                       <h3 className="flex items-center space-x-2 text-xl font-bold text-slate-800 mb-4">
-                        <MessageSquare className="w-6 h-6 text-blue-600" />
+                        <MessageSquare className="w-6 h-6 text-[#3F5C79]" />
                         <span>Replies ({selectedTicket.replies.length})</span>
                       </h3>
                       <div className="space-y-4">
                         {selectedTicket.replies.map((reply, index) => (
                           <div 
                             key={index}
-                            className="bg-slate-50 border-2 border-slate-200 p-6 rounded-2xl"
+                            className="bg-slate-50 border border-slate-200 p-6 rounded-2xl"
                           >
                             <div className="flex items-start space-x-3">
                               <div className="flex-shrink-0">
-                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                  <User className="w-4 h-4 text-blue-600" />
+                                <div className="w-8 h-8 bg-[#E3EDF7] rounded-full flex items-center justify-center">
+                                  <User className="w-4 h-4 text-[#3F5C79]" />
                                 </div>
                               </div>
                               <div className="flex-1 min-w-0">
@@ -739,10 +758,10 @@ const Tickets: React.FC = () => {
                   {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
                     <div className="mb-6">
                       <h3 className="flex items-center space-x-2 text-xl font-bold text-slate-800 mb-4">
-                        <Paperclip className="w-6 h-6 text-blue-600" />
+                        <Paperclip className="w-6 h-6 text-[#3F5C79]" />
                         <span>Attachments ({selectedTicket.attachments.length})</span>
                       </h3>
-                      <div className="bg-slate-50 border-2 border-slate-200 p-6 rounded-2xl">
+                      <div className="bg-slate-50 border border-slate-200 p-6 rounded-2xl">
                         <p className="text-slate-500 text-sm italic">Attachments will be displayed here</p>
                       </div>
                     </div>
@@ -751,11 +770,11 @@ const Tickets: React.FC = () => {
                   {/* Comment/Reply Section */}
                   <div className="mb-6">
                     <h3 className="flex items-center space-x-2 text-xl font-bold text-slate-800 mb-4">
-                      <MessageSquare className="w-6 h-6 text-blue-600" />
+                      <MessageSquare className="w-6 h-6 text-[#3F5C79]" />
                       <span>Add Response</span>
                     </h3>
                     <textarea
-                      className="w-full px-4 py-4 border-2 border-slate-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 resize-none text-slate-700 placeholder-slate-400"
+                      className="w-full px-4 py-4 border border-slate-300 rounded-2xl focus:border-[#3F5C79] focus:ring-2 focus:ring-[#3F5C79]/15 transition-all duration-200 resize-none text-slate-700 placeholder-slate-400"
                       rows={4}
                       placeholder="Add your response or internal notes here..."
                       value={comment}
@@ -773,7 +792,7 @@ const Tickets: React.FC = () => {
                     <div className="flex flex-wrap gap-3 w-full sm:w-auto">
                       {(selectedTicket.status === "NEW" || selectedTicket.status === "OPEN") && (
                         <button
-                          className="flex items-center justify-center space-x-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-initial min-w-[140px]"
+                          className="flex min-w-[160px] flex-1 items-center justify-center space-x-2 rounded-xl bg-[#3C6E5D] px-6 py-3 font-medium text-white shadow-sm transition-all duration-200 hover:bg-[#335E50] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-initial"
                           onClick={() => resolveTicket(selectedTicket.id)}
                           disabled={isUpdating}
                         >
@@ -788,7 +807,7 @@ const Tickets: React.FC = () => {
                       
                       {selectedTicket.status === "CLOSED" && (
                         <button
-                          className="flex items-center justify-center space-x-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-initial min-w-[140px]"
+                          className="flex min-w-[160px] flex-1 items-center justify-center space-x-2 rounded-xl bg-[#7C6334] px-6 py-3 font-medium text-white shadow-sm transition-all duration-200 hover:bg-[#675229] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-initial"
                           onClick={() => reopenTicket(selectedTicket.id)}
                           disabled={isUpdating}
                         >
@@ -803,7 +822,7 @@ const Tickets: React.FC = () => {
                     </div>
                     
                     <button
-                      className="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-xl transition-all duration-200 font-medium shadow-md hover:shadow-lg min-w-[100px]"
+                      className="min-w-[110px] rounded-xl border border-slate-300 bg-white px-6 py-3 font-medium text-slate-700 transition-all duration-200 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                       onClick={closeModal}
                       disabled={isUpdating}
                     >
