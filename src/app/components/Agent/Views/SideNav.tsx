@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaTicketAlt, FaChartBar, FaClipboardList } from "react-icons/fa";
-import { MdDashboard, MdSettings } from "react-icons/md";
+import { MdSettings } from "react-icons/md";
 
 interface SideNavProps {
   isSidebarOpen: boolean;
@@ -10,7 +10,6 @@ interface SideNavProps {
 
 const SideNav: React.FC<SideNavProps> = ({ isSidebarOpen, onSelectPage, currentView }) => {
   const navItems = [
-    { icon: <MdDashboard className="w-5 h-5" />, label: 'Dashboard', hint: 'Support overview' },
     { icon: <FaTicketAlt className="w-5 h-5" />, label: 'Tickets', hint: 'Assigned ticket queue' },
     { icon: <FaChartBar className="w-5 h-5" />, label: 'Statistics', hint: 'Performance trends' },
     { icon: <FaClipboardList className="w-5 h-5" />, label: 'Update Profile', hint: 'Personal information' },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { BsKanban } from 'react-icons/bs';
-import { FaTicketAlt, FaUsers, FaBell, FaUserShield, FaClipboardList } from 'react-icons/fa';
-import { MdDashboard, MdSettings } from 'react-icons/md';
+import { FaTicketAlt, FaUsers, FaBell, FaUserShield, FaClipboardList, FaChartLine } from 'react-icons/fa';
+import { MdSettings } from 'react-icons/md';
 
 interface SideNavProps {
   isSidebarOpen: boolean;
@@ -11,13 +11,13 @@ interface SideNavProps {
 
 const AdminNavigation: React.FC<SideNavProps> = ({ isSidebarOpen, onSelectPage, currentView }) => {
   const navItems = [
-    { icon: <MdDashboard className="w-5 h-5" />, label: 'Dashboard', hint: 'Overview and system health' },
     { icon: <FaTicketAlt className="w-5 h-5" />, label: 'Tickets', hint: 'Queue and escalation control' },
     { icon: <FaUsers className="w-5 h-5" />, label: 'Agents', hint: 'Manage support team accounts' },
     { icon: <BsKanban className="w-5 h-5" />, label: 'Agent Performance', legacyLabel: 'Agent Peformance', hint: 'Productivity and response analytics' },
     { icon: <FaUserShield className="w-5 h-5" />, label: 'User Provisioning', legacyLabel: 'CREATE', hint: 'Create agents and admins' },
     { icon: <FaBell className="w-5 h-5" />, label: 'Update Profile', hint: 'Account details and preferences' },
     { icon: <FaClipboardList className="w-5 h-5" />, label: 'Audit Logs', hint: 'Security and API trail' },
+    { icon: <FaChartLine className="w-5 h-5" />, label: 'Reports', hint: 'Management analytics and trends' },
     { icon: <MdSettings className="w-5 h-5" />, label: 'Settings', hint: 'Platform configuration' },
   ];
 

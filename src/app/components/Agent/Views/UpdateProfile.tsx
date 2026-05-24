@@ -70,7 +70,7 @@ const UpdateProfile = () => {
   // Fetch profile data on mount
   useEffect(() => {
     const fetchProfile = async () => {
-      const storedEmail = localStorage.getItem('email');
+      const storedEmail = (localStorage.getItem('email') ?? '').trim();
       if (!storedEmail) {
         showToast('error', 'No email found. Please log in again.');
         return;
@@ -87,7 +87,8 @@ const UpdateProfile = () => {
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorText = await response.text();
+          throw new Error(`HTTP error! status: ${response.status}${errorText ? ` - ${errorText}` : ''}`);
         }
 
         const data = await response.json();
@@ -108,6 +109,19 @@ const UpdateProfile = () => {
       } catch (error) {
         console.error('Error fetching profile data:', error);
         showToast('error', 'Failed to load profile data. Please try again.');
+        const fallback = {
+          name: '',
+          email: storedEmail,
+          phone: '',
+          address: '',
+          city: '',
+          state: '',
+          zip: '',
+          country: '',
+          password: '',
+        };
+        setFormData(fallback);
+        setOriginalData(fallback);
       } finally {
         setIsLoading(false);
       }

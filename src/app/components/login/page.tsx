@@ -207,15 +207,16 @@ const Login = () => {
               {loading ? 'Logging in...' : 'Login'}
             </button>
 
-           {/* Reset Password Link */}
-            <p className="mt-3 text-center">
-              <a
+            {/* Reset Password Button */}
+            <div className="mt-3 text-center">
+              <button
+                type="button"
                 onClick={handleResetPassword}
-                className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer transition-colors duration-200"
+                className="text-blue-600 hover:text-blue-800 text-sm transition-colors duration-200"
               >
                 Forgot Password?
-              </a>
-            </p>
+              </button>
+            </div>
           </form>
 
           {/* Footer */}

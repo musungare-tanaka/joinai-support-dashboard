@@ -6,7 +6,6 @@ import NavBar from '../Views/NavBar';
 import { useRouter } from 'next/navigation';
 import AgentsStats from '../Views/Statistics';
 import UpdateProfile from '../Views/UpdateProfile';
-import TicketNotifications from '../Views/Notifications';
 import Settings from '../Views/Settings';
 
 const Layout = () => {
@@ -49,20 +48,16 @@ const Layout = () => {
 
   const renderContent = () => {
     switch (currentView) {
-      case 'Dashboard':
-        return <Tickets />;
       case 'Tickets':
         return <Tickets />;
-      case 'Agents':
-        return <UpdateProfile />;
       case 'Statistics':
         return <AgentsStats />;
-      case 'Notifications':
-        return <TicketNotifications />;
+      case 'Update Profile':
+        return <UpdateProfile />;
       case 'Settings':
         return <Settings />;
       default:
-        return <UpdateProfile />;
+        return <Tickets />;
     }
   };
 

@@ -10,9 +10,10 @@ import UpdateProfile from '../../Agent/Views/UpdateProfile';
 import Settings from '../../Agent/Views/Settings';
 import UserCreation from '../Views/UserCreation';
 import AuditLogs from '../Views/AuditLogs';
+import Reports from '../Views/Reports';
 
 const Layout: React.FC = () => { 
-  const [currentView, setCurrentView] = useState('Dashboard');
+  const [currentView, setCurrentView] = useState('Tickets');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isNotificationTabOpen, setIsNotificationTabOpen] = useState(false);
@@ -37,8 +38,6 @@ const Layout: React.FC = () => {
   
   const renderContent = () => {
     switch (currentView) {
-      case 'Dashboard':
-        return <AgentDataComponent />;
       case 'Tickets':
         return <TicketList />;
       case 'Agents':
@@ -58,6 +57,8 @@ const Layout: React.FC = () => {
         return <UserCreation/>
       case 'Audit Logs':
         return <AuditLogs />;
+      case 'Reports':
+        return <Reports />;
       default:
         return <TicketList />;
     }

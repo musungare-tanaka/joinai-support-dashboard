@@ -278,7 +278,6 @@ const AuditLogs: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Time</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Actor</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Request</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Duration</th>
@@ -290,7 +289,6 @@ const AuditLogs: React.FC = () => {
                 {paginatedLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{formatDateTime(log.createdAt)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{log.actorEmail || 'anonymous'}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700">
